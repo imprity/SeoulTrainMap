@@ -3,7 +3,7 @@ import { IN_OUT, WEEK_TAG, Course, StationVisit, Train, Station, Branch } from '
 import { loadCsv, toCsvString } from './csvFunctions.js'
 import { LineColors } from './LineColors.js'
 import { UIButton, UISlider } from './UIs.js'
-import '../node_modules/jszip/dist/jszip.js'
+import './node_modules/jszip/dist/jszip.js'
 
 let parentDiv;
 let canvas;
