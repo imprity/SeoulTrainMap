@@ -10,7 +10,7 @@ Open with any static server you have.
 
 ***Don't use this to check when your train will arrive irl.*** Not only is it ouddated, it's base on supposed train schedule rather than a real time data.
 
----
+
 # 서울시 지하철 지도
 ---
 
