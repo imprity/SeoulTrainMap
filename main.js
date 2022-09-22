@@ -320,19 +320,19 @@ window.onload = async function () {
     onResize();
 
     let onMouseDrag = function (event) {
-        paper.view.translate(event.delta.x * 0.7, event.delta.y * 0.7);
+        paper.view.translate(event.event.movementX / zoomScale,event.event.movementY / zoomScale);
+        paper.view.update();
     }
 
     geoBackground = new paper.Raster('./raster-cors.jpg');
     geoBackground.opacity = 0.1;
-    geoBackground.applyMatrix = false;
+    geoBackground.applyMatrix = true;
     geoBackground.position = paper.view.center;
-    geoBackground.onMouseDrag = onMouseDrag;
+    paper.view.onMouseDrag = onMouseDrag;
 
     geoBackground.onLoad = function () {
 
         graphBackground = new paper.Raster('./graph background.svg');
-        graphBackground.onMouseDrag = onMouseDrag;
         graphBackground.opacity = 0;
 
         graphBackground.onLoad = function () {
@@ -652,9 +652,8 @@ function onWheel(event) {
 }
 
 function zoom(delta, x = mouseX, y = mouseY) {
-    zoomScale *= delta;
-
     paper.view.scale(delta, new paper.Point(x, y));
+    zoomScale = paper.view.zoom;
     stationDisplayers.forEach(displayer=>displayer.UpdatePositionAndScale());
 }
 
