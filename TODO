@@ -1,5 +1,5 @@
 Make custom canvas library and use it rather than using paper.js
-Make navigating smoother
 Make things prettier
 Ecapsulate things
 Replace jpg map with svg map
+supprot mobile
