@@ -76,9 +76,6 @@ let HEIGHT = 0
 
 let zoomScale = 1;
 
-let mouseX = 0;
-let mouseY = 0;
-
 function TrainDisplayer(_train) {
     this.train = _train;
     this.currCourse = undefined;
@@ -306,9 +303,9 @@ window.onload = async function () {
     }
 
     parentDiv = window.document.createElement('div');
-    parentDiv.style.margin = 0+'px'
-    parentDiv.style.border = 0+'px'
-    parentDiv.style.padding = 0+'px'
+    parentDiv.style.margin = 0 + 'px'
+    parentDiv.style.border = 0 + 'px'
+    parentDiv.style.padding = 0 + 'px'
     window.document.body.appendChild(parentDiv);
 
     canvas = window.document.createElement('canvas');
@@ -319,16 +316,10 @@ window.onload = async function () {
     paper.setup(canvas);
     onResize();
 
-    let onMouseDrag = function (event) {
-        paper.view.translate(event.event.movementX / zoomScale,event.event.movementY / zoomScale);
-        paper.view.update();
-    }
-
     geoBackground = new paper.Raster('./raster-cors.jpg');
     geoBackground.opacity = 0.1;
     geoBackground.applyMatrix = true;
     geoBackground.position = paper.view.center;
-    paper.view.onMouseDrag = onMouseDrag;
 
     geoBackground.onLoad = function () {
 
@@ -465,28 +456,6 @@ window.onload = async function () {
                 branchLoop(branches[0], { x: 0, y: yPos });
             }
 
-
-            canvas.addEventListener('wheel', onWheel);
-
-            paper.view.onFrame = function (event) {
-                addTime(event.delta * timeMultiplier);
-                trainDisplayers.forEach(displayer => displayer.update());
-            }
-
-            paper.view.onMouseMove = function (event) {
-                mouseX = event.point.x;
-                mouseY = event.point.y;
-            }
-
-            paper.view.onMouseEnter = function(event){
-                mouseX = event.point.x;
-                mouseY = event.point.y;
-            }
-
-            mouseX = paper.view.center.x;
-            mouseY = paper.view.center.y;
-                
-
             timeViewer = document.createElement('p');
             timeViewer.style.position = 'absolute';
             timeViewer.style.bottom = 40 + 'px';
@@ -514,9 +483,9 @@ window.onload = async function () {
             timeSlider.slider.style.bottom = 30 + 'px';
             timeSlider.slider.style.width = 130 + 'px';
 
-            new UIButton(parentDiv, 10, 10, '일요일', () => {currentWeek = WEEK_TAG.SUNDAY;});
-            new UIButton(parentDiv, 80, 10, '토요일', () => {currentWeek = WEEK_TAG.SATURDAY;});
-            new UIButton(parentDiv, 150, 10, '평일', () => {currentWeek = WEEK_TAG.WEEKDAY;});
+            new UIButton(parentDiv, 10, 10, '일요일', () => { currentWeek = WEEK_TAG.SUNDAY; });
+            new UIButton(parentDiv, 80, 10, '토요일', () => { currentWeek = WEEK_TAG.SATURDAY; });
+            new UIButton(parentDiv, 150, 10, '평일', () => { currentWeek = WEEK_TAG.WEEKDAY; });
             let timeOutId;
             let changeButton = new UIButton(parentDiv, 10, 50, '그래프로 보기', () => {
                 clearTimeout(timeOutId)
@@ -541,12 +510,12 @@ window.onload = async function () {
                     }, 10)
                 }
                 inGraphMode = !inGraphMode;
-                if(inGraphMode)
+                if (inGraphMode)
                     changeButton.button.innerText = '지도로 보기'
-                else 
+                else
                     changeButton.button.innerText = '그래프로 보기'
             })
-            
+
             let multiplierController = document.createElement('input');
             multiplierController.type = "number";
             multiplierController.value = 1;
@@ -556,9 +525,9 @@ window.onload = async function () {
             multiplierController.style.width = 50 + 'px';
             multiplierController.step = 'any';
             multiplierController.min = 0;
-            multiplierController.addEventListener('input', event=>{
+            multiplierController.addEventListener('input', event => {
                 let toSet = parseFloat(event.target.value);
-                if(toSet < 0 || isNaN(toSet)) {toSet = 0};
+                if (toSet < 0 || isNaN(toSet)) { toSet = 0 };
                 timeMultiplier = toSet;
                 multiplierController.value = toSet;
             })
@@ -571,6 +540,36 @@ window.onload = async function () {
             multiplierControllerLabel.style.left = 170 + 'px';
             multiplierControllerLabel.htmlFor = multiplierController;
             document.body.appendChild(multiplierControllerLabel);
+
+            //////////////////////////////////
+            //add event listeners
+            //////////////////////////////////
+            paper.view.onFrame = function (event) {
+                addTime(event.delta * timeMultiplier);
+                trainDisplayers.forEach(displayer => displayer.update());
+            }
+
+            window.addEventListener('resize', event => {
+                onResize();
+            })
+
+            let listener = new CanvasListener(canvas);
+
+            listener.onpointerdrag = (event) => {
+                let deltaX = event.x - event.prevX;
+                let deltaY = event.y - event.prevY;
+                paper.view.translate(deltaX / zoomScale, deltaY / zoomScale);
+            };
+
+            listener.onwheel = (event)=>{
+                let xformed = clinetCoordinateToPaperCoodinate(event.x, event.y);
+                zoom(1.0 - event.wheelDelta * 0.001, xformed.x, xformed.y);
+            }
+
+            listener.onpinch = (event)=>{
+                let xformed = clinetCoordinateToPaperCoodinate(event.pinchX, event.pinchY);
+                zoom(event.pinchSize / event.prevPinchSize, xformed.x, xformed.y);
+            }
         }
     }
 }
@@ -624,37 +623,37 @@ let dayToKorString = function () {
 }
 
 
-function onWheel(event) {
-    event.preventDefault();
+//function onWheel(event) {
+//    event.preventDefault();
+//
+//    //below line is because of the weird specification between browsers
+//    //baisically unit of delta value can be different per brower
+//    //https://developer.mozilla.org/en-US/docs/Web/API/WheelEvent/deltaMode
+//
+//    let delta = 0;
+//    switch(event.deltaMode){
+//        case 0:{
+//            delta = 1 - event.deltaY * 0.001;
+//            break;
+//        }
+//        case 1:{
+//            delta = 1 - event.deltaY * 0.04;
+//            break;
+//        }
+//        case 3:{
+//            //do browsers use this mode?
+//            delta = 1 - event.deltaY * 0.1;
+//            break;
+//        }
+//    }
+//
+//    zoom(delta , mouseX, mouseY);
+//}
 
-    //below line is because of the weird specification between browsers
-    //baisically unit of delta value can be different per brower
-    //https://developer.mozilla.org/en-US/docs/Web/API/WheelEvent/deltaMode
-
-    let delta = 0;
-    switch(event.deltaMode){
-        case 0:{
-            delta = 1 - event.deltaY * 0.001;
-            break;
-        }
-        case 1:{
-            delta = 1 - event.deltaY * 0.04;
-            break;
-        }
-        case 3:{
-            //do browsers use this mode?
-            delta = 1 - event.deltaY * 0.1;
-            break;
-        }
-    }
-
-    zoom(delta , mouseX, mouseY);
-}
-
-function zoom(delta, x = mouseX, y = mouseY) {
+function zoom(delta, x, y) {
     paper.view.scale(delta, new paper.Point(x, y));
     zoomScale = paper.view.zoom;
-    stationDisplayers.forEach(displayer=>displayer.UpdatePositionAndScale());
+    stationDisplayers.forEach(displayer => displayer.UpdatePositionAndScale());
 }
 
 
@@ -668,10 +667,6 @@ function onResize() {
         displayer.UpdatePositionAndScale();
     })
 }
-
-window.addEventListener('resize', event => {
-    onResize();
-})
 
 let loadingText = undefined;
 function displayLoadingProgress(progress) {
@@ -843,6 +838,11 @@ function pathToStation(current, next) {
     }
 
     return searchLoop(current, next.stationCode);
+}
+
+function clinetCoordinateToPaperCoodinate(x, y){
+    let transformed = paper.view.matrix.inverseTransform(new paper.Point(x, y));
+    return transformed;
 }
 
 function interpolateStation(code1, code2, value) {
