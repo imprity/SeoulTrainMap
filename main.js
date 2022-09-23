@@ -5,22 +5,22 @@ import { LineColors } from './LineColors.js'
 import { UIButton, UISlider } from './UIs.js'
 import './node_modules/jszip/dist/jszip.js'
 
-let parentDiv;
-let canvas;
-let geoBackground;
-let graphBackground;
-let stations = [];
-let stationDisplayers = [];
-let connectionDisplayers = [];
-let trains = [];
-let trainDisplayers = [];
-let timeSlider;
-let branchLines = [];
-let timeViewer
-let timeMultiplier = 1.0;
+let PARENT_DIV;
+let CANVAS;
+let GEO_BACKGROUND;
+let GRAPH_BACKGROUND;
+let STATIONS = [];
+let STATION_DISPLAYERS = [];
+let CONN_DISPLAYERS = [];
+let TRAINS = [];
+let TRAIN_DISPLAYERS = [];
+let TIME_SLIDER;
+let BRANCH_LINES = [];
+let TIME_VIEWER
+let TIME_MULTIPLIER = 1.0;
 
-let inGraphMode = false;
-let geoToGraphInterp = 0; // 0 is map view, 1 is graph view
+let IN_GRAPH_MODE = false;
+let GEO_TO_GRAPH_INTERP = 0; // 0 is map view, 1 is graph view
 
 let zip = new JSZip();
 
@@ -120,12 +120,12 @@ TrainDisplayer.prototype.update = function () {
                 ///////////////////////////////////////////////////////////////////
                 // below is the special edge case for line number 2 which is loop//
                 ///////////////////////////////////////////////////////////////////
-                if (inGraphMode && ((prevStation.stationCode == "0235" && nextStation.stationCode == "0234") || (prevStation.stationCode == "0234" && nextStation.stationCode == "0235")))
+                if (IN_GRAPH_MODE && ((prevStation.stationCode == "0235" && nextStation.stationCode == "0234") || (prevStation.stationCode == "0234" && nextStation.stationCode == "0235")))
                     this.SetVisible(false);
                 //////////////////////////////////////////////////////////////////////
                 // below is the special edge case for line number 6 which has a loop//
                 /////////////////////////////////////////////////////////////////////
-                if (inGraphMode && ((prevStation.stationCode == "2614" && nextStation.stationCode == "2613") || (prevStation.stationCode == "2613" && nextStation.stationCode == "2614")))
+                if (IN_GRAPH_MODE && ((prevStation.stationCode == "2614" && nextStation.stationCode == "2613") || (prevStation.stationCode == "2613" && nextStation.stationCode == "2614")))
                     this.SetVisible(false);
 
                 else {
@@ -178,7 +178,7 @@ function ConnetionDisplayer(_stationDisplayer1, _stationDisplayer2) {
 
 ConnetionDisplayer.prototype.UpdatePositionAndScale = function () {
     if (
-        inGraphMode && ((this.stationDisplay1.atGraphEnd && this.stationDisplay2.atGraphEnd) ||
+        IN_GRAPH_MODE && ((this.stationDisplay1.atGraphEnd && this.stationDisplay2.atGraphEnd) ||
 
             ///////////////////////////////////////////////////////////////////
             // below is the special edge case for line number 2 which is loop//
@@ -232,8 +232,8 @@ StationDisplayer.prototype.UpdatePositionAndScale = function () {
     let geoLocation = geoLocationToBackgroundPos(this.station.xCoord, this.station.yCoord);
     let graphLocation = graphLocationToBackgroundPos(this.graphLocationX, this.graphLocationY);
 
-    where.x = map(geoToGraphInterp, 0, 1, geoLocation.x, graphLocation.x);
-    where.y = map(geoToGraphInterp, 0, 1, geoLocation.y, graphLocation.y);
+    where.x = map(GEO_TO_GRAPH_INTERP, 0, 1, geoLocation.x, graphLocation.x);
+    where.y = map(GEO_TO_GRAPH_INTERP, 0, 1, geoLocation.y, graphLocation.y);
 
     this.x = where.x;
     this.y = where.y;
@@ -248,8 +248,8 @@ StationDisplayer.prototype.UpdatePositionAndScale = function () {
 window.onload = async function () {
 
     let trainDatas = await loadTrainJsonData(displayLoadingProgress);
-    trains = trainDatas;
-    trains.forEach(train => {
+    TRAINS = trainDatas;
+    TRAINS.forEach(train => {
         train.courses.forEach(course => {
             let earlyTime = new Hour();
             let lateTime = new Hour();
@@ -281,7 +281,7 @@ window.onload = async function () {
         stationToPush.line = parseInt(csvStationLocationData[3][i][1]);
         stationToPush.xCoord = parseFloat(csvStationLocationData[5][i]);
         stationToPush.yCoord = parseFloat(csvStationLocationData[6][i]);
-        stations.push(stationToPush);
+        STATIONS.push(stationToPush);
     }
 
     //fill up the statio Connections;
@@ -302,64 +302,64 @@ window.onload = async function () {
         })
     }
 
-    parentDiv = window.document.createElement('div');
-    parentDiv.style.margin = 0 + 'px'
-    parentDiv.style.border = 0 + 'px'
-    parentDiv.style.padding = 0 + 'px'
-    window.document.body.appendChild(parentDiv);
+    PARENT_DIV = window.document.createElement('div');
+    PARENT_DIV.style.margin = 0 + 'px'
+    PARENT_DIV.style.border = 0 + 'px'
+    PARENT_DIV.style.padding = 0 + 'px'
+    window.document.body.appendChild(PARENT_DIV);
 
-    canvas = window.document.createElement('canvas');
-    canvas.style.margin = '0px';
-    canvas.style.border = '0px';
-    canvas.style.padding = '0px';
-    parentDiv.appendChild(canvas);
-    paper.setup(canvas);
+    CANVAS = window.document.createElement('canvas');
+    CANVAS.style.margin = '0px';
+    CANVAS.style.border = '0px';
+    CANVAS.style.padding = '0px';
+    PARENT_DIV.appendChild(CANVAS);
+    paper.setup(CANVAS);
     onResize();
 
-    geoBackground = new paper.Raster('./raster-cors.jpg');
-    geoBackground.opacity = 0.1;
-    geoBackground.applyMatrix = true;
-    geoBackground.position = paper.view.center;
+    GEO_BACKGROUND = new paper.Raster('./raster-cors.jpg');
+    GEO_BACKGROUND.opacity = 0.1;
+    GEO_BACKGROUND.applyMatrix = true;
+    GEO_BACKGROUND.position = paper.view.center;
 
-    geoBackground.onLoad = function () {
+    GEO_BACKGROUND.onLoad = function () {
 
-        graphBackground = new paper.Raster('./graph background.svg');
-        graphBackground.opacity = 0;
+        GRAPH_BACKGROUND = new paper.Raster('./graph background.svg');
+        GRAPH_BACKGROUND.opacity = 0;
 
-        graphBackground.onLoad = function () {
+        GRAPH_BACKGROUND.onLoad = function () {
 
-            graphBackground.bounds.center = geoBackground.bounds.center;
+            GRAPH_BACKGROUND.bounds.center = GEO_BACKGROUND.bounds.center;
 
-            stations.forEach(station => {
-                stationDisplayers.push(new StationDisplayer(station));
+            STATIONS.forEach(station => {
+                STATION_DISPLAYERS.push(new StationDisplayer(station));
             })
             for (let i = 0; i < 8; i++) {
                 let connections = stationConnections[i];
                 connections.forEach(connection => {
                     let display1 = codeToStationDisplayer(connection[0]);
                     let display2 = codeToStationDisplayer(connection[1]);
-                    connectionDisplayers.push(new ConnetionDisplayer(display1, display2));
+                    CONN_DISPLAYERS.push(new ConnetionDisplayer(display1, display2));
                 })
             }
 
             let seoulLocation = geoLocationToBackgroundPos(126.9725546, 37.5571595);
             zoom(3.0, seoulLocation.x, seoulLocation.y);
 
-            trains.forEach(train => {
+            TRAINS.forEach(train => {
                 let displayer = new TrainDisplayer(train);
-                trainDisplayers.push(displayer);
+                TRAIN_DISPLAYERS.push(displayer);
                 displayer.update();
             })
 
             //build branch from line 1 to 8;
-            branchLines.push(buildBranch(codeToStation("1408"), codeToStation("1407"))) // line 1 신창 to 온양온천
-            branchLines.push(buildBranch(codeToStation("0235"), codeToStation("0236"))) // line 2 문래 to 영등포구청
-            branchLines.push(buildBranch(codeToStation("1958"), codeToStation("1957"))) // line 3 대화 to 주엽
-            branchLines.push(buildBranch(codeToStation("1762"), codeToStation("1761"))) // line 4 오이도 to 정왕
-            branchLines.push(buildBranch(codeToStation("2511"), codeToStation("2512"))) // line 5 방화 to 개화산
-            branchLines.push(buildBranch(codeToStation("2613"), codeToStation("2612"))) // line 6 불광 to 역촌
-            branchLines.push(buildBranch(codeToStation("2761"), codeToStation("2760"))) // line 7 부평구청 to 굴포천
-            branchLines.push(buildBranch(codeToStation("2811"), codeToStation("2812"))) // line 8 암사 to 천호
+            BRANCH_LINES.push(buildBranch(codeToStation("1408"), codeToStation("1407"))) // line 1 신창 to 온양온천
+            BRANCH_LINES.push(buildBranch(codeToStation("0235"), codeToStation("0236"))) // line 2 문래 to 영등포구청
+            BRANCH_LINES.push(buildBranch(codeToStation("1958"), codeToStation("1957"))) // line 3 대화 to 주엽
+            BRANCH_LINES.push(buildBranch(codeToStation("1762"), codeToStation("1761"))) // line 4 오이도 to 정왕
+            BRANCH_LINES.push(buildBranch(codeToStation("2511"), codeToStation("2512"))) // line 5 방화 to 개화산
+            BRANCH_LINES.push(buildBranch(codeToStation("2613"), codeToStation("2612"))) // line 6 불광 to 역촌
+            BRANCH_LINES.push(buildBranch(codeToStation("2761"), codeToStation("2760"))) // line 7 부평구청 to 굴포천
+            BRANCH_LINES.push(buildBranch(codeToStation("2811"), codeToStation("2812"))) // line 8 암사 to 천호
 
 
             let branchLength = [];
@@ -372,7 +372,7 @@ window.onload = async function () {
                 return lengthToReturn;
             }
 
-            branchLines.forEach(branches => {
+            BRANCH_LINES.forEach(branches => {
                 let totalLength = 0;
 
                 let branchLoop = function (parentBranch, startingPoint) {
@@ -403,10 +403,10 @@ window.onload = async function () {
                 longestLength = Math.max(longestLength, branchLength[i]);
             }
 
-            let yInterval = (graphPosYMaxPixel - graphPosYMinPixel) / (branchLines.length + 1);
+            let yInterval = (graphPosYMaxPixel - graphPosYMinPixel) / (BRANCH_LINES.length + 1);
 
-            for (let i = 0; i < branchLines.length; i++) {
-                let branches = branchLines[i];
+            for (let i = 0; i < BRANCH_LINES.length; i++) {
+                let branches = BRANCH_LINES[i];
                 let yPos = graphPosYMinPixel + yInterval * (i + 1);
 
                 let branchLoop = function (_branch, startingPos) {
@@ -456,15 +456,15 @@ window.onload = async function () {
                 branchLoop(branches[0], { x: 0, y: yPos });
             }
 
-            timeViewer = document.createElement('p');
-            timeViewer.style.position = 'absolute';
-            timeViewer.style.bottom = 40 + 'px';
-            timeViewer.style.left = 30 + 'px';
-            timeViewer.innerText = dayToKorString() + " " + Hour.fromSeconds(currentSecond).toString();
-            document.body.appendChild(timeViewer);
+            TIME_VIEWER = document.createElement('p');
+            TIME_VIEWER.style.position = 'absolute';
+            TIME_VIEWER.style.bottom = 40 + 'px';
+            TIME_VIEWER.style.left = 30 + 'px';
+            TIME_VIEWER.innerText = dayToKorString() + " " + Hour.fromSeconds(currentSecond).toString();
+            document.body.appendChild(TIME_VIEWER);
 
             // adding ui elements
-            timeSlider = new UISlider(parentDiv, 0, 1, 20, 10, event => {
+            TIME_SLIDER = new UISlider(PARENT_DIV, 0, 1, 20, 10, event => {
                 switch (currentWeek) {
                     case WEEK_TAG.SUNDAY:
                         currentSecond = map(event.target.value, 0, 1, sundayStart.toSeconds(), sundayEnd.toSeconds());
@@ -476,41 +476,41 @@ window.onload = async function () {
                         currentSecond = map(event.target.value, 0, 1, weekdayStart.toSeconds(), weekdayEnd.toSeconds());
                         break;
                 }
-                timeViewer.innerText = dayToKorString() + " " + Hour.fromSeconds(currentSecond).toString();
+                TIME_VIEWER.innerText = dayToKorString() + " " + Hour.fromSeconds(currentSecond).toString();
             });
 
-            timeSlider.slider.style.top = "";
-            timeSlider.slider.style.bottom = 30 + 'px';
-            timeSlider.slider.style.width = 130 + 'px';
+            TIME_SLIDER.slider.style.top = "";
+            TIME_SLIDER.slider.style.bottom = 30 + 'px';
+            TIME_SLIDER.slider.style.width = 130 + 'px';
 
-            new UIButton(parentDiv, 10, 10, '일요일', () => { currentWeek = WEEK_TAG.SUNDAY; });
-            new UIButton(parentDiv, 80, 10, '토요일', () => { currentWeek = WEEK_TAG.SATURDAY; });
-            new UIButton(parentDiv, 150, 10, '평일', () => { currentWeek = WEEK_TAG.WEEKDAY; });
+            new UIButton(PARENT_DIV, 10, 10, '일요일', () => { currentWeek = WEEK_TAG.SUNDAY; });
+            new UIButton(PARENT_DIV, 80, 10, '토요일', () => { currentWeek = WEEK_TAG.SATURDAY; });
+            new UIButton(PARENT_DIV, 150, 10, '평일', () => { currentWeek = WEEK_TAG.WEEKDAY; });
             let timeOutId;
-            let changeButton = new UIButton(parentDiv, 10, 50, '그래프로 보기', () => {
+            let changeButton = new UIButton(PARENT_DIV, 10, 50, '그래프로 보기', () => {
                 clearTimeout(timeOutId)
-                if (inGraphMode) {
+                if (IN_GRAPH_MODE) {
                     timeOutId = setInterval(() => {
-                        geoToGraphInterp -= 0.05;
+                        GEO_TO_GRAPH_INTERP -= 0.05;
                         onTranstion();
-                        if (geoToGraphInterp < 0) {
-                            geoToGraphInterp = 0;
+                        if (GEO_TO_GRAPH_INTERP < 0) {
+                            GEO_TO_GRAPH_INTERP = 0;
                             clearTimeout(timeOutId);
                         }
                     }, 10)
                 }
                 else {
                     timeOutId = setInterval(() => {
-                        geoToGraphInterp += 0.05;
+                        GEO_TO_GRAPH_INTERP += 0.05;
                         onTranstion();
-                        if (geoToGraphInterp > 1) {
-                            geoToGraphInterp = 1;
+                        if (GEO_TO_GRAPH_INTERP > 1) {
+                            GEO_TO_GRAPH_INTERP = 1;
                             clearTimeout(timeOutId);
                         }
                     }, 10)
                 }
-                inGraphMode = !inGraphMode;
-                if (inGraphMode)
+                IN_GRAPH_MODE = !IN_GRAPH_MODE;
+                if (IN_GRAPH_MODE)
                     changeButton.button.innerText = '지도로 보기'
                 else
                     changeButton.button.innerText = '그래프로 보기'
@@ -528,7 +528,7 @@ window.onload = async function () {
             multiplierController.addEventListener('input', event => {
                 let toSet = parseFloat(event.target.value);
                 if (toSet < 0 || isNaN(toSet)) { toSet = 0 };
-                timeMultiplier = toSet;
+                TIME_MULTIPLIER = toSet;
                 multiplierController.value = toSet;
             })
             document.body.appendChild(multiplierController);
@@ -545,15 +545,15 @@ window.onload = async function () {
             //add event listeners
             //////////////////////////////////
             paper.view.onFrame = function (event) {
-                addTime(event.delta * timeMultiplier);
-                trainDisplayers.forEach(displayer => displayer.update());
+                addTime(event.delta * TIME_MULTIPLIER);
+                TRAIN_DISPLAYERS.forEach(displayer => displayer.update());
             }
 
             window.addEventListener('resize', event => {
                 onResize();
             })
 
-            let listener = new CanvasListener(canvas);
+            let listener = new CanvasListener(CANVAS);
 
             listener.onpointerdrag = (event) => {
                 let deltaX = event.x - event.prevX;
@@ -575,10 +575,10 @@ window.onload = async function () {
 }
 
 function onTranstion() {
-    stationDisplayers.forEach(displayer => { displayer.UpdatePositionAndScale() });
-    connectionDisplayers.forEach(displayer => { displayer.UpdatePositionAndScale() });
-    geoBackground.opacity = 0.1 * (1 - geoToGraphInterp);
-    graphBackground.opacity = geoToGraphInterp;
+    STATION_DISPLAYERS.forEach(displayer => { displayer.UpdatePositionAndScale() });
+    CONN_DISPLAYERS.forEach(displayer => { displayer.UpdatePositionAndScale() });
+    GEO_BACKGROUND.opacity = 0.1 * (1 - GEO_TO_GRAPH_INTERP);
+    GRAPH_BACKGROUND.opacity = GEO_TO_GRAPH_INTERP;
 }
 
 function addTime(delta) {
@@ -604,8 +604,8 @@ function addTime(delta) {
         currentSecond = minSecond;
     else if (currentSecond < minSecond)
         currentSecond = maxSecond;
-    timeSlider.setValue(map(currentSecond, minSecond, maxSecond, 0, 1));
-    timeViewer.innerText = dayToKorString() + " " + Hour.fromSeconds(currentSecond).toString();
+    TIME_SLIDER.setValue(map(currentSecond, minSecond, maxSecond, 0, 1));
+    TIME_VIEWER.innerText = dayToKorString() + " " + Hour.fromSeconds(currentSecond).toString();
 }
 
 let dayToKorString = function () {
@@ -622,48 +622,20 @@ let dayToKorString = function () {
     }
 }
 
-
-//function onWheel(event) {
-//    event.preventDefault();
-//
-//    //below line is because of the weird specification between browsers
-//    //baisically unit of delta value can be different per brower
-//    //https://developer.mozilla.org/en-US/docs/Web/API/WheelEvent/deltaMode
-//
-//    let delta = 0;
-//    switch(event.deltaMode){
-//        case 0:{
-//            delta = 1 - event.deltaY * 0.001;
-//            break;
-//        }
-//        case 1:{
-//            delta = 1 - event.deltaY * 0.04;
-//            break;
-//        }
-//        case 3:{
-//            //do browsers use this mode?
-//            delta = 1 - event.deltaY * 0.1;
-//            break;
-//        }
-//    }
-//
-//    zoom(delta , mouseX, mouseY);
-//}
-
 function zoom(delta, x, y) {
     paper.view.scale(delta, new paper.Point(x, y));
     zoomScale = paper.view.zoom;
-    stationDisplayers.forEach(displayer => displayer.UpdatePositionAndScale());
+    STATION_DISPLAYERS.forEach(displayer => displayer.UpdatePositionAndScale());
 }
 
 
 function onResize() {
     WIDTH = window.document.documentElement.clientWidth;
     HEIGHT = window.document.documentElement.clientHeight;
-    canvas.width = WIDTH;
-    canvas.height = HEIGHT;
+    CANVAS.width = WIDTH;
+    CANVAS.height = HEIGHT;
     paper.view.viewSize = new paper.Size(WIDTH, HEIGHT);
-    stationDisplayers.forEach(displayer => {
+    STATION_DISPLAYERS.forEach(displayer => {
         displayer.UpdatePositionAndScale();
     })
 }
@@ -740,8 +712,8 @@ function geoLocationToBackgroundPos(x, y) {
     toReturn.y = map(y, posYMax, posYMin, posYMinPixel, posYMaxPixel);
     toReturn.x /= imagePixelSize;
     toReturn.y /= imagePixelSize;
-    toReturn.x = geoBackground.bounds.x + toReturn.x * geoBackground.bounds.width;
-    toReturn.y = geoBackground.bounds.y + toReturn.y * geoBackground.bounds.height;
+    toReturn.x = GEO_BACKGROUND.bounds.x + toReturn.x * GEO_BACKGROUND.bounds.width;
+    toReturn.y = GEO_BACKGROUND.bounds.y + toReturn.y * GEO_BACKGROUND.bounds.height;
     return toReturn;
 }
 
@@ -750,8 +722,8 @@ function geoBackgroundPosToLocation(x, y) {
         x: 0,
         y: 0,
     }
-    toReturn.x -= geoBackground.bounds.x;
-    toReturn.y -= geoBackground.bounds.y;
+    toReturn.x -= GEO_BACKGROUND.bounds.x;
+    toReturn.y -= GEO_BACKGROUND.bounds.y;
     toReturn.x = map(x, posXMinPixel, posXMaxPixel, posXMin, posXMax)
     toReturn.y = map(y, posYMinPixel, posYMaxPixel, posYMin, posYMax);
     return toReturn;
@@ -764,8 +736,8 @@ function graphLocationToBackgroundPos(x, y) {
     }
     toReturn.x /= graphImagePixelSizeX;
     toReturn.y /= graphImagePixelSizeY;
-    toReturn.x = graphBackground.bounds.x + toReturn.x * graphBackground.bounds.width;
-    toReturn.y = graphBackground.bounds.y + toReturn.y * graphBackground.bounds.height;
+    toReturn.x = GRAPH_BACKGROUND.bounds.x + toReturn.x * GRAPH_BACKGROUND.bounds.width;
+    toReturn.y = GRAPH_BACKGROUND.bounds.y + toReturn.y * GRAPH_BACKGROUND.bounds.height;
     return toReturn;
 }
 
@@ -783,7 +755,7 @@ let codeToName = function (code) {
 }
 
 let codeToStation = function (code) {
-    return stations.find(s => { return s.stationCode == code });
+    return STATIONS.find(s => { return s.stationCode == code });
 }
 
 let codeToLineNum = function (code) {
@@ -791,7 +763,7 @@ let codeToLineNum = function (code) {
 }
 
 let codeToStationDisplayer = function (code) {
-    return stationDisplayers.find(displayer => code == displayer.station.stationCode)
+    return STATION_DISPLAYERS.find(displayer => code == displayer.station.stationCode)
 }
 
 function pathToStation(current, next) {
